@@ -1,0 +1,129 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Example: Stick to bottom</title>
+    <link rel="stylesheet" type="text/css" href="src/example.css">
+    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <script src="src/floater.js"></script>
+    <script>
+        $(window).on('scroll', function() {
+            $('.navbar').toggleClass('navbar--small', $(window).scrollTop() > 10);
+            $('.content').toggleClass('content--padded', $(window).scrollTop() < 10);
+        });
+    </script>
+    <style>
+        .navbar {
+            width: 100%;
+            height: 200px;
+            max-height: 200px;
+            position: fixed;
+            top: 0;
+            display: block;
+            background: #507380;
+            right: 0;
+            left: 0;
+            z-index: 100;
+            transition: 100ms ease;
+        }
+
+        .navbar.navbar--small {
+            height: 56px;
+            max-height: 56px;
+        }
+
+        .content {
+            display: inline-block;
+            padding-top: 80px;
+        }
+
+        .content.content--padded {
+            padding-top: 200px;
+        }
+
+        .maincontent-wrapper {
+            width: 360px;
+            float: left;
+            position: relative;
+        }
+
+        .maincontent-floater {
+            background: #eee;
+            border: 2px solid #58EE54;
+        }
+    </style>
+</head>
+<body>
+
+<section class="navbar">
+    header
+</section>
+
+<section class="content content--padded">
+    <div class="sidebar">
+        <div class="floater-wrapper">
+            <div class="floater"
+                 data-component="floater"
+                 data-floater-container=".content"
+                 data-floater-parent=".sidebar"
+                 data-floater-options='{"paddingTop": "56", "animationDuration": "1"}'>
+                <div>
+                    <p>Loren sump dolor sit met, expendable foreordains interpretations cu, maxim sole pertinacity in ram. Er nostrum vol up chary is. Unitarian elect ram patriot, en sea tuber gen constitute, rebus illus adolescents sit. Eugenia sentient emu. Que mundane dissents ed ea, est virus ab torrent ad, en sea momentum patriot. Ornateness bland it ex enc, est am banyan yeti detract re.</p>
+
+                    <p>
+                        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                            Collapse
+                        </button>
+                    </p>
+                    <div class="collapse" id="collapseExample">
+                        <div class="card card-block">
+                            <p>Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident.</p>
+
+                            <p>Id mes mover elect ram assertion has no. Nam e quad qua eke, re me sues om ques men nadir. Est ponder um expedients cu, veil ex quid dictum momentum. Fabulous portiere cor rum pit cu tied, in enc more commode mandamus. Gypsum dissed effendi id me, est ad erred grace officious. Eel error bemuses definiteness an, ram an kumquat intelligent.</p>
+                        </div>
+                    </div>
+
+                    <p>Id mes mover elect ram assertion has no. Nam e quad qua eke, re me sues om ques men nadir. Est ponder um expedients cu, veil ex quid dictum momentum. Fabulous portiere cor rum pit cu tied, in enc more commode mandamus. Gypsum dissed effendi id me, est ad erred grace officious. Eel error bemuses definiteness an, ram an kumquat intelligent.</p>
+
+                    <p>Fabulous portiere cor rum pit cu tied, in enc more commode mandamus. Nev regions detract ex. Fermi marchioness xiv. Gracie nominal id xiv. Te monuments comprehension sea, at avidity accustom convenient man. In corpora cementum cum, man lull dissent in. Usu it mollies nostrum, per en appropriate negligent. Quot detract misstates in per.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="maincontent-wrapper">
+        <div class="maincontent-floater"
+             data-component="floater"
+             data-floater-container=".content"
+             data-floater-parent=".maincontent"
+             data-floater-options='{"paddingTop": "56", "animationDuration": "1"}'>
+            <div>
+                <p>Loren sump dolor sit met, expendable foreordains interpretations cu, maxim sole pertinacity in ram. Er nostrum vol up chary is. Unitarian elect ram patriot, en sea tuber gen constitute, rebus illus adolescents sit. Eugenia sentient emu. Que mundane dissents ed ea, est virus ab torrent ad, en sea momentum patriot. Ornateness bland it ex enc, est am banyan yeti detract re.</p>
+
+                <p>
+                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseExample2" aria-expanded="false" aria-controls="collapseExample">
+                        Collapse
+                    </button>
+                </p>
+                <div class="collapse" id="collapseExample2">
+                    <div class="card card-block">
+                        <p>Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident.</p>
+
+                        <p>Id mes mover elect ram assertion has no. Nam e quad qua eke, re me sues om ques men nadir. Est ponder um expedients cu, veil ex quid dictum momentum. Fabulous portiere cor rum pit cu tied, in enc more commode mandamus. Gypsum dissed effendi id me, est ad erred grace officious. Eel error bemuses definiteness an, ram an kumquat intelligent.</p>
+                    </div>
+                </div>
+
+                <p>Id mes mover elect ram assertion has no. Nam e quad qua eke, re me sues om ques men nadir. Est ponder um expedients cu, veil ex quid dictum momentum. Fabulous portiere cor rum pit cu tied, in enc more commode mandamus. Gypsum dissed effendi id me, est ad erred grace officious. Eel error bemuses definiteness an, ram an kumquat intelligent.</p>
+
+                <p>Fabulous portiere cor rum pit cu tied, in enc more commode mandamus. Nev regions detract ex. Fermi marchioness xiv. Gracie nominal id xiv. Te monuments comprehension sea, at avidity accustom convenient man. In corpora cementum cum, man lull dissent in. Usu it mollies nostrum, per en appropriate negligent. Quot detract misstates in per.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="footer">
+    footer
+</section>
+
+</body>
+</html>
