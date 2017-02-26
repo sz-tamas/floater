@@ -17,11 +17,11 @@
             this.$relativeParent = $relativeParent.length ? $relativeParent : $element.parent();
             this.lastScroll = 0;
             this.scrollDirection = '';
-            this.standby = options.standby || false;
             this.options = $.extend({
                 paddingTop: paddingTop,
                 paddingBottom: paddingBottom
             }, options || {});
+            this.standby = this.options.standby || false;
 
             this.init();
             if (debug) console.log('FLOATER ATTACHED', this.$element, this.options);
@@ -40,7 +40,7 @@
         };
 
         Floater.prototype.init = function () {
-            this.$relativeParent.css({height: this.$element.height()});
+            this.$relativeParent.css({'min-height': this.$element.height(), height: '100%'});
             this.$element.css({top: 0, position: 'absolute', width: 'inherit'});
 
             $(window).on('scroll', this.onScroll.bind(this));
