@@ -2,12 +2,42 @@
 <head>
     <meta charset="UTF-8">
     <title>Example: Stick to bottom</title>
-    <link rel="stylesheet" type="text/css" href="src/example.css">
+    <link rel="stylesheet" type="text/css" href="css/example.css">
     <script src="../node_modules/jquery/dist/jquery.min.js"></script>
-    <script src="src/floater.js"></script>
+    <script src="../src/floater.js"></script>
+    <script>
+        $(window).on('scroll', function() {
+            $('.navbar').toggleClass('navbar--small', $(window).scrollTop() > 10);
+            $('.content').toggleClass('content--padded', $(window).scrollTop() < 10);
+        });
+    </script>
     <style>
         .navbar {
-            position: relative;
+            width: 100%;
+            height: 200px;
+            max-height: 200px;
+            position: fixed;
+            top: 0;
+            display: block;
+            background: #507380;
+            right: 0;
+            left: 0;
+            z-index: 100;
+            transition: 100ms ease;
+        }
+
+        .navbar.navbar--small {
+            height: 56px;
+            max-height: 56px;
+        }
+
+        .content {
+            display: inline-block;
+            padding-top: 80px;
+        }
+
+        .content.content--padded {
+            padding-top: 200px;
         }
     </style>
 </head>
@@ -17,12 +47,13 @@
     header
 </section>
 
-<section class="content">
+<section class="content content--padded">
     <div class="sidebar">
         <div class="floater-wrapper">
             <div class="floater"
                  data-component="floater"
-                 data-floater-container=".content">
+                 data-floater-container=".content"
+                 data-floater-options='{"paddingTop": "56"}'>
                 <div>
                     <p>Loren sump dolor sit met, expendable foreordains interpretations cu, maxim sole pertinacity in ram. Er nostrum vol up chary is. Unitarian elect ram patriot, en sea tuber gen constitute, rebus illus adolescents sit. Eugenia sentient emu. Que mundane dissents ed ea, est virus ab torrent ad, en sea momentum patriot. Ornateness bland it ex enc, est am banyan yeti detract re.</p>
 

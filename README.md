@@ -22,11 +22,28 @@ This is the relative parent to the element where we want the element to stick to
 
 **data-floater-options**: JSON
  
-   - animate: "true","false"       # Sets element top animated or not
+   - animate: true,false           # Sets element top animated or not
    - paddingTop: 0                 # Adds a padding to the element offsettop calc when setting top
    - paddingBottom: 0              # Adds a padding to the element offsetbottom calc when setting top
+   - mediaUp: 768                  # Skips calc & top change under 768px
+   - mediaDown: 768                # Skips calc & top change above 768px  
+   - standby: true,false           # If true then recalc or changing top will be skipped
 
-## USAGE EXAMPLE
+## Events
+
+**floater:recalc** (global/target)
+When sending global (document) event all floaters will recalc.
+When sending targeted event only the target floater will recalc.
+
+**floater:standby-on**
+When sending global (document) event all floaters will skip recalc and changing top.
+When sending targeted event only the target will skip recalc and changing top.
+
+**floater:standby-off**
+When sending global (document) event all floaters will start recalc and changing top on next scroll or *floater:recalc*.
+When sending targeted event only the target will start recalc and changing top on next scroll or *floater:recalc*.
+
+## Usage example
 
 Install dependencies:
 ```

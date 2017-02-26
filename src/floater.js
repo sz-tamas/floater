@@ -17,6 +17,7 @@
             this.$relativeParent = $relativeParent.length ? $relativeParent : $element.parent();
             this.lastScroll = 0;
             this.scrollDirection = '';
+            this.standby = options.standby || false;
             this.options = $.extend({
                 paddingTop: paddingTop,
                 paddingBottom: paddingBottom
@@ -41,7 +42,17 @@
         Floater.prototype.init = function () {
             this.$relativeParent.css({height: this.$element.height()});
             this.$element.css({top: 0, position: 'absolute', width: 'inherit'});
+
             $(window).on('scroll', this.onScroll.bind(this));
+
+            $(document).on('floater:recalc', this.recalc.bind(this));
+            $(document).on('floater:standby-on', function() { this.standby = true; }.bind(this));
+            $(document).on('floater:standby-off', function() { this.standby = false; }.bind(this));
+
+            $(this.$element).on('floater:recalc', this.recalc.bind(this));
+            $(this.$element).on('floater:standby-on', function() { this.standby = true; }.bind(this));
+            $(this.$element).on('floater:standby-off', function() { this.standby = false; }.bind(this));
+
             this.onScroll();
         };
 
@@ -51,7 +62,13 @@
 
             if (debug) console.log('FLOATER SCROLL', this.scrollDirection);
 
-            this.recalc();
+            if (this.standby) return;
+
+            if (this.options.mediaUp && (+this.options.mediaUp < window.innerWidth) ||
+                this.options.mediaDown && (+this.options.mediaDown > window.innerWidth) ||
+                !(this.options.mediaUp || this.options.mediaDown)) {
+                this.recalc();
+            }
         };
 
         Floater.prototype.recalc = function () {
