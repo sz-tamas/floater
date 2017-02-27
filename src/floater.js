@@ -23,7 +23,7 @@
             this.options = $.extend({
                 paddingTop: paddingTop,
                 paddingBottom: paddingBottom,
-                scrollProp: 'transform'
+                animationDuration: 200
             }, options || {});
             this.standby = this.options.standby || false;
 
@@ -45,7 +45,7 @@
 
         Floater.prototype.init = function () {
             this.$relativeParent.css({'min-height': this.$element.height(), height: '100%'});
-            this.$element.css({top: 0, position: 'absolute', width: 'inherit',transition:'200ms all'});
+            this.$element.css({top: 0, position: 'absolute', width: 'inherit',transition:this.options.animationDuration+'ms all'});
 
             $(window).on('scroll', this.onScroll.bind(this));
 
