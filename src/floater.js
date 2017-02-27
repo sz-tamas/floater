@@ -99,10 +99,13 @@
                 } else {
                   this.topPos += diff;
                 }
+                top = this.topPos;
+            } else {
+              top = $(window).scrollTop() - parentOffsetTop;//+ +this.options.paddingTop;
             }
 
 
-            top = this.topPos;
+
 
             top = Math.max(top, 0);
             top = Math.min(top, max);
