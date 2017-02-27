@@ -45,7 +45,7 @@
 
         Floater.prototype.init = function () {
             this.$relativeParent.css({'min-height': this.$element.height(), height: '100%'});
-            this.$element.css({top: 0, position: 'absolute', width: 'inherit',transition:'300ms all'});
+            this.$element.css({top: 0, position: 'absolute', width: 'inherit',transition:'200ms all'});
 
             $(window).on('scroll', this.onScroll.bind(this));
 
@@ -76,7 +76,7 @@
         };
 
         Floater.prototype.recalc = function () {
-            var top, old = +this.$element.css('top').replace('px', ''),
+            var top,
                 max = this.$containerParent.outerHeight(true) - this.$element.outerHeight(true),
                 parentOffsetTop = this.$relativeParent.offset().top,
                 offsetTop = this.$element.offset().top,
@@ -85,31 +85,25 @@
 
             // (Re)Set relative parent height
             this.$relativeParent.css({height: this.$element.height()});
-
-
-            // Stick to top
-            //top = $(window).scrollTop() - parentOffsetTop;//+ +this.options.paddingTop;
-
+            var sc = $(window).scrollTop();
+            // Stick to
 
             if (this.$element.height() > window.innerHeight) {
-                var diff = $(window).scrollTop() - this.lastPageY;
-
-                if(scrollYHeight - paddingBottom <= offsetBottom && $(window).scrollTop() >= offsetTop) {
+                var diff =  sc - this.lastPageY;
+                if(scrollYHeight - paddingBottom <= offsetBottom && sc + paddingTop >= offsetTop) {
                   top = this.oldTop;
+                  this.topPos = top;
                 } else {
                   this.topPos += diff;
                 }
                 top = this.topPos;
             } else {
-              top = $(window).scrollTop() - parentOffsetTop;//+ +this.options.paddingTop;
+              top = sc - parentOffsetTop + +this.options.paddingTop;
             }
-
-
-
 
             top = Math.max(top, 0);
             top = Math.min(top, max);
-            //top = this.oldTop;
+
             this.oldTop = top;
 
             if (debug) console.log('FLOATER TOP', top);
@@ -123,14 +117,8 @@
             top += 'px';
             var value = {};
             value[this.options.scrollProp] = this.options.scrollProp === "top" ? top : 'translate3d(0px,'+top+',0px)';
-            //console.log(value);
             this.$element.css(value);
-            /*this.$element[this.options.animate === "false" ? "css" : "animate"](value,{
-              queue: false, duration: +this.options.animationDuration || 250
-            });*/
         };
-
-
 
         return Floater;
     })();
