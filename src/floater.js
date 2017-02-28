@@ -16,6 +16,7 @@
             this.$containerParent = $containerParent;
             this.$relativeParent = $relativeParent.length ? $relativeParent : $element.parent();
             this.lastScroll = 0;
+            this.inTick = false;
             this.scrollDirection = '';
             this.topPos = 0;
             this.oldTop = 0;
@@ -23,7 +24,8 @@
             this.options = $.extend({
                 paddingTop: paddingTop,
                 paddingBottom: paddingBottom,
-                animationDuration: 200
+                animationDuration: 400,
+                scrollProp: 'transform'
             }, options || {});
             this.standby = this.options.standby || false;
 
@@ -76,6 +78,7 @@
         };
 
         Floater.prototype.recalc = function () {
+
             var top,
                 max = this.$containerParent.outerHeight(true) - this.$element.outerHeight(true),
                 parentOffsetTop = this.$relativeParent.offset().top,
@@ -84,13 +87,14 @@
                 scrollYHeight = window.pageYOffset + window.innerHeight;
 
             // (Re)Set relative parent height
-            this.$relativeParent.css({height: this.$element.height()});
-            var sc = $(window).scrollTop();
+            this.$relativeParent.css({'min-height': this.$element.outerHeight(true),height: this.$element.outerHeight(true)});
+            var sc = Number.parseInt($(window).scrollTop());
+
             // Stick to
 
             if (this.$element.height() > window.innerHeight) {
-                var diff =  sc - this.lastPageY;
-                if(scrollYHeight - paddingBottom <= offsetBottom && sc + paddingTop >= offsetTop) {
+                var diff = sc - this.lastPageY;
+                if(scrollYHeight - Number.parseInt(this.options.paddingBottom) <= offsetBottom && sc + Number.parseInt(this.options.paddingTop) >= offsetTop) {
                   top = this.oldTop;
                   this.topPos = top;
                 } else {
@@ -108,9 +112,12 @@
 
             if (debug) console.log('FLOATER TOP', top);
 
+
             window.requestAnimationFrame(function() {
                 this.scrollTop(top)
             }.bind(this));
+
+
         };
 
         Floater.prototype.scrollTop = function(top) {
