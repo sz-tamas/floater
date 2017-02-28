@@ -16,15 +16,15 @@
             this.$containerParent = $containerParent;
             this.$relativeParent = $relativeParent.length ? $relativeParent : $element.parent();
             this.lastScroll = 0;
-            this.inTick = false;
             this.scrollDirection = '';
-            this.topPos = 0;
+            this.scrollTimeout = null;
+            this.top = 0;
             this.oldTop = 0;
             this.lastPageY = window.pageYOffset;
             this.options = $.extend({
                 paddingTop: paddingTop,
                 paddingBottom: paddingBottom,
-                animationDuration: 400,
+                animationDuration: 250,
                 scrollProp: 'transform'
             }, options || {});
             this.standby = this.options.standby || false;
@@ -37,17 +37,22 @@
             var self = this;
 
             $(target).each(function(i, element) {
-               new self($(element),
-                   $($(element).data('floaterContainer')),
-                   $($(element).data('floaterParent')),
-                   $(element).data('floaterOptions')
-               );
+                new self($(element),
+                    $($(element).data('floaterContainer')),
+                    $($(element).data('floaterParent')),
+                    $(element).data('floaterOptions')
+                );
             });
         };
 
         Floater.prototype.init = function () {
             this.$relativeParent.css({'min-height': this.$element.height(), height: '100%'});
-            this.$element.css({top: 0, position: 'absolute', width: 'inherit',transition:this.options.animationDuration+'ms all'});
+            this.$element.css({
+                top: 'initial',
+                position: 'absolute',
+                width: 'inherit',
+                transition: this.options.animationDuration + 'ms all'
+            });
 
             $(window).on('scroll', this.onScroll.bind(this));
 
@@ -67,63 +72,77 @@
 
             if (debug) console.log('FLOATER SCROLL', this.scrollDirection);
 
-            if (this.standby) return;
-
             if (this.options.mediaUp && (+this.options.mediaUp < window.innerWidth) ||
                 this.options.mediaDown && (+this.options.mediaDown > window.innerWidth) ||
                 !(this.options.mediaUp || this.options.mediaDown)) {
                 this.recalc();
+            } else {
+                // Unset
+                this.$element.css({
+                    transform: 'none',
+                    top: 'initial',
+                    position: 'absolute',
+                    width: 'inherit',
+                    transition: this.options.animationDuration+'ms transform ease-in-out 0s'
+                });
             }
+
             this.lastPageY = $(window).scrollTop();
         };
 
         Floater.prototype.recalc = function () {
-
-            var top,
-                max = this.$containerParent.outerHeight(true) - this.$element.outerHeight(true),
+            var top, max = this.$containerParent.outerHeight(true) - this.$element.outerHeight(true),
                 parentOffsetTop = this.$relativeParent.offset().top,
                 offsetTop = this.$element.offset().top,
                 offsetBottom = offsetTop + this.$element.outerHeight(true),
-                scrollYHeight = window.pageYOffset + window.innerHeight;
+                scrollYHeight = window.pageYOffset + window.innerHeight,
+                scrollTop = Number.parseInt($(window).scrollTop());
 
             // (Re)Set relative parent height
-            this.$relativeParent.css({'min-height': this.$element.outerHeight(true),height: this.$element.outerHeight(true)});
-            var sc = Number.parseInt($(window).scrollTop());
+            this.$relativeParent.css({
+                'min-height': this.$element.outerHeight(true),
+                height: this.$element.outerHeight(true)
+            });
 
-            // Stick to
+            // Skip setting top if in standby mode
+            if (this.standby) return;
 
+            // Stick to top
             if (this.$element.height() > window.innerHeight) {
-                var diff = sc - this.lastPageY;
-                if(scrollYHeight - Number.parseInt(this.options.paddingBottom) <= offsetBottom && sc + Number.parseInt(this.options.paddingTop) >= offsetTop) {
-                  top = this.oldTop;
-                  this.topPos = top;
+                if(scrollYHeight - Number.parseInt(this.options.paddingBottom) <= offsetBottom &&
+                    scrollTop + Number.parseInt(this.options.paddingTop) >= offsetTop) {
+                    this.top = this.oldTop;
                 } else {
-                  this.topPos += diff;
+                    this.top += scrollTop - this.lastPageY;
                 }
-                top = this.topPos;
+                top = this.top;
             } else {
-              top = sc - parentOffsetTop + +this.options.paddingTop;
+                top = scrollTop - parentOffsetTop + Number.parseInt(this.options.paddingTop);
             }
 
             top = Math.max(top, 0);
             top = Math.min(top, max);
 
+            if (debug) console.log('FLOATER TOP', {top: top, oldTop: oldTop});
+
             this.oldTop = top;
 
-            if (debug) console.log('FLOATER TOP', top);
-
-
-            window.requestAnimationFrame(function() {
-                this.scrollTop(top)
-            }.bind(this));
-
-
+            clearTimeout(this.scrollTimeout);
+            this.scrollTimeout = setTimeout(function() {
+                window.requestAnimationFrame(function() {
+                    this.scrollTop(top)
+                }.bind(this));
+            }.bind(this), 5);
         };
 
         Floater.prototype.scrollTop = function(top) {
-            top += 'px';
             var value = {};
-            value[this.options.scrollProp] = this.options.scrollProp === "top" ? top : 'translate3d(0px,'+top+',0px)';
+
+            top = top < 0 ? 0 : top;
+
+            value[this.options.scrollProp] = this.options.scrollProp === "top" ?
+            top + 'px' : 'translate3d(0,' + top + 'px, 0)';
+
             this.$element.css(value);
         };
 
