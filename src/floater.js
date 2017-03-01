@@ -55,13 +55,9 @@
             this.$containerParent = document.querySelector($element.dataset.floaterContainer);
             this.$relativeParent = document.querySelector($element.dataset.floaterParent) || $element.parentElement;
 
-            this.scroll = {last: window.pageYOffset - 1, timeout: null};
+            this.scroll = {last: window.pageYOffset - 1, timeout: null, ticking: false};
 
-            this.state = {
-                top: 0,
-                lastTop: 0,
-                parentTop: this.$relativeParent.offsetTop
-            };
+            this.state = {top: 0, lastTop: 0};
 
             this.options = Object.assign({
                 paddingTop: paddingTop,
@@ -85,19 +81,19 @@
         Floater.prototype.init = function () {
             this.options.animationDuration = this.options.animate !== "false" ? this.options.animationDuration : 0;
 
-            this.$relativeParent.style.minHeight = this.$element.clientHeight;
-            this.$relativeParent.style.minHeight = '100%';
+            this.$relativeParent.style.minHeight = this.$element.offsetHeight + 'px';
+            this.$relativeParent.style.height = '100%';
             this.$element.style.position = 'absolute';
             this.$element.style.width = 'inherit';
 
             if (this.options.transform) {
-                this.$element.style.transition = this.options.animationDuration + 'ms transform cubic-bezier(0.5, 0.32, 0.5, 0.32)';
+                this.$element.style.transition = this.options.animationDuration + 'ms transform cubic-bezier(0.5, 0.9, 0.8, 0.32)';
             } else {
                 this.$element.style.top = 'initial';
             }
 
-            window.onscroll = this.onScroll.bind(this);
-            window.onresize = this.onScroll.bind(this);
+            window.addEventListener('scroll', this.onScroll.bind(this));
+            window.addEventListener('resize', this.onScroll.bind(this));
 
             document.addEventListener('floater:recalc', this.recalc.bind(this));
             document.addEventListener('floater:standby-on', function() { this.options.standby = true; }.bind(this));
@@ -133,8 +129,10 @@
         };
 
         Floater.prototype.recalc = function () {
-            var elHeight = this.$element.offsetHeight,
-                top, max = this.$containerParent.offsetHeight - elHeight,
+            var top,
+                elHeight = this.$element.offsetHeight,
+                parentTop = Number.parseInt(this.$relativeParent.offsetTop) || Number.parseInt(this.$containerParent.offsetTop),
+                max = (this.$containerParent.offsetHeight - elHeight - parentTop),
                 elTop = this.state.lastTop - Number.parseInt(this.options.paddingTop),
                 elBottom = this.state.lastTop + elHeight + Number.parseInt(this.options.paddingBottom),
                 scrollY = window.scrollY,
@@ -142,43 +140,52 @@
                 scrollHeight = scrollY + windowHeight;
 
             // (Re)Set relative parent height
-            this.$relativeParent.style.height = elHeight;
-            this.$relativeParent.style.minHeight = elHeight;
+            this.$relativeParent.style.height = elHeight + 'px';
+            this.$relativeParent.style.minHeight = elHeight + 'px';
 
             // Skip setting top if in standby mode
             if (this.options.standby) return;
 
-            // Stick to top
-            if (this.$element.clientHeight > windowHeight) {
-                if (elTop + this.state.parentTop > scrollY && this.scroll.last > scrollY) {
-                    this.state.top -= Math.min(this.state.lastTop, (elTop + this.state.parentTop + Number.parseInt(this.options.paddingTop)) - scrollY);
-                } else if (elBottom + this.state.parentTop + Number.parseInt(this.options.paddingBottom) < scrollHeight && this.scroll.last < scrollY) {
-                    this.state.top += (scrollHeight) - (elBottom + this.state.parentTop);
+            // Stick to
+            if (elHeight > windowHeight) {
+                if (elTop + parentTop >= scrollY && this.scroll.last > scrollY) {
+                    this.state.top -= Math.min(this.state.lastTop, (elTop + parentTop) - scrollY);
+                } else if (elBottom + parentTop <= scrollHeight && this.scroll.last < scrollY) {
+                    this.state.top += (scrollHeight) - (elBottom + parentTop);
                 } else {
                     return;
                 }
 
                 top = this.state.top;
             } else {
-                top = scrollY - this.state.parentTop + Number.parseInt(this.options.paddingTop);
+                top = scrollY - parentTop + Number.parseInt(this.options.paddingTop);
             }
 
             top = Math.min(top, max);
             top = Math.max(top, 0);
 
-            if (debug) console.log('FLOATER TOP', {top: top, lastTop: this.state.lastTop});
+            if (debug) console.log('FLOATER TOP', {top: top, lastTop: this.state.lastTop, max: max});
 
+            this.state.top = top;
             this.state.lastTop = top;
+            this.requestTick(top);
+        };
 
+        Floater.prototype.requestTick = function() {
             clearTimeout(this.scroll.timeout);
-            this.scroll.timeout = setTimeout(function() {
-                window.requestAnimationFrame(function() {
-                    this.scrollTop(top)
-                }.bind(this));
+            this.scroll.timeout = setTimeout(function () {
+                if (!this.scroll.ticking) {
+                    window.requestAnimationFrame(function () {
+                        this.scrollTop(this.state.top);
+                    }.bind(this));
+                }
+                this.scroll.ticking = true;
             }.bind(this), 1);
         };
 
         Floater.prototype.scrollTop = function(top) {
+            this.scroll.ticking = false;
+
             if (this.options.transform) {
                 this.$element.style[this.options.transform] = 'translate3d(0, ' + top + 'px, 0)';
             } else {
