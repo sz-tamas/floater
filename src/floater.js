@@ -36,12 +36,29 @@
         };
     }
 
+    var cssTransition = (function() {
+        var fakeElement = document.createElement('div'),
+            transitions = {
+                "transition"      : "transitionend",
+                "OTransition"     : "oTransitionEnd",
+                "MozTransition"   : "transitionend",
+                "WebkitTransition": "webkitTransitionEnd"
+            };
+
+        for (t in transitions){
+            if (fakeElement.style[t] !== undefined){
+                return transitions[t];
+            }
+        }
+    })();
+
     var cssTransform = (function() {
         var prefixes = 'transform webkitTransform mozTransform oTransform msTransform'.split(' '),
-            cssTransform;
+            fakeElement = document.createElement('div');
+        cssTransform;
 
         prefixes.some(function(prefix) {
-            cssTransform = document.createElement('div').style[prefix] != undefined ? prefix : undefined;
+            cssTransform = fakeElement.style[prefix] != undefined ? prefix : undefined;
 
             return !!cssTransform;
         });
@@ -64,7 +81,8 @@
                 paddingBottom: paddingBottom,
                 animationDuration: 250,
                 standby: false,
-                transform: cssTransform
+                transform: cssTransform,
+                transition: cssTransition,
             }, JSON.parse($element.dataset.floaterOptions || '{}'));
 
             this.init();
@@ -87,7 +105,12 @@
             this.$element.style.width = 'inherit';
 
             if (this.options.transform) {
-                this.$element.style.transition = this.options.animationDuration + 'ms transform cubic-bezier(0.5, 0.9, 0.8, 0.32)';
+                this.$element.style.transition = this.options.animationDuration + 'ms transform cubic-bezier(0.1, 0.32, 0.1, 0)';
+                this.$element.addEventListener(this.options.transition, function() {
+                    if (debug) console.log('FLOATER TICKING END');
+                    this.scroll.ticking = false;
+                    this.recalc();
+                }.bind(this));
             } else {
                 this.$element.style.top = 'initial';
             }
@@ -119,7 +142,7 @@
                 this.$element.style.width = 'inherit';
 
                 if (this.options.transform) {
-                    this.$element.style.tansition = this.options.animationDuration + 'ms transform';
+                    this.$element.style.transform = 'none';
                 } else {
                     this.$element.style.top = 'initial';
                 }
@@ -148,23 +171,24 @@
 
             // Stick to
             if (elHeight > windowHeight) {
-                if (elTop + parentTop >= scrollY && this.scroll.last > scrollY) {
+                if (elTop + parentTop >= scrollY) {
                     this.state.top -= Math.min(this.state.lastTop, (elTop + parentTop) - scrollY);
-                } else if (elBottom + parentTop <= scrollHeight && this.scroll.last < scrollY) {
+                } else if (elBottom + parentTop <= scrollHeight) {
                     this.state.top += (scrollHeight) - (elBottom + parentTop);
                 } else {
+                    if (debug) console.log('FLOATER TICKING END');
+                    this.scroll.ticking = false;
                     return;
                 }
 
                 top = this.state.top;
             } else {
                 top = scrollY - parentTop + Number.parseInt(this.options.paddingTop);
+                this.scroll.ticking = false;
             }
 
             top = Math.min(top, max);
             top = Math.max(top, 0);
-
-            if (debug) console.log('FLOATER TOP', {top: top, lastTop: this.state.lastTop, max: max});
 
             this.state.top = top;
             this.state.lastTop = top;
@@ -172,24 +196,22 @@
         };
 
         Floater.prototype.requestTick = function() {
-            clearTimeout(this.scroll.timeout);
-            this.scroll.timeout = setTimeout(function () {
-                if (!this.scroll.ticking) {
-                    window.requestAnimationFrame(function () {
-                        this.scrollTop(this.state.top);
-                    }.bind(this));
-                }
-                this.scroll.ticking = true;
-            }.bind(this), 1);
+            if (!this.scroll.ticking) {
+                if (debug) console.log('FLOATER TOP', {top: this.state.top, lastTop: this.state.lastTop});
+
+                window.requestAnimationFrame(function () {
+                    this.scrollTop(this.state.top);
+                }.bind(this));
+            }
+            this.scroll.ticking = true;
         };
 
         Floater.prototype.scrollTop = function(top) {
-            this.scroll.ticking = false;
-
             if (this.options.transform) {
                 this.$element.style[this.options.transform] = 'translate3d(0, ' + top + 'px, 0)';
             } else {
                 this.$element.style.top = top + 'px';
+                this.scroll.ticking = false;
             }
         };
 
