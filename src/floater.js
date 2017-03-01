@@ -206,16 +206,14 @@
                 // Stick to
                 if (elHeight > windowHeight) {
                     if (elTop + parentTop > scrollY) {
-                        this.state.top -= Math.min(this.state.lastTop, (elTop + parentTop) - scrollY);
+                        top -= Math.min(this.state.lastTop, (elTop + parentTop) - scrollY);
                     } else if (elBottom + parentTop < scrollHeight) {
-                        this.state.top += scrollHeight - (elBottom + parentTop);
+                        top += scrollHeight - (elBottom + parentTop);
                     } else {
                         if (debug) console.log('FLOATER TICKING END');
                         this.scroll.ticking = false;
                         return;
                     }
-
-                    top = this.state.top;
                 } else {
                     top = scrollY - parentTop + Number.parseInt(this.options.paddingTop);
                     this.scroll.ticking = false;
@@ -223,21 +221,21 @@
 
                 top = Math.min(top, max);
                 top = Math.max(top, 0);
-
-                this.state.top = top;
-                this.state.lastTop = top;
-                this.requestTick();
+                this.requestTick(top);
             }.bind(this));
         };
 
-        Floater.prototype.requestTick = function() {
+        Floater.prototype.requestTick = function(top) {
             if (!this.scroll.ticking) {
                 if (debug) {
-                    console.log('FLOATER TOP', {top: this.state.top, lastTop: this.state.lastTop});
+                    console.log('FLOATER TOP', {top: top, lastTop: this.state.lastTop});
                     console.log('FLOATER SCROLL', {scroll: window.scrollY, lastScroll: this.scroll.last});
                 }
 
-                this.scrollTop(this.state.top);
+                this.scrollTop(top);
+                setTimeout(function() {
+                    this.scroll.ticking = false;
+                }.bind(this), +this.options.animationEnd || 0);
             }
             this.scroll.ticking = true;
         };
@@ -249,6 +247,8 @@
                 this.$element.style.top = top + 'px';
                 this.scroll.ticking = false;
             }
+            this.state.lastTop = this.state.top;
+            this.state.top = top;
         };
 
         return Floater;
