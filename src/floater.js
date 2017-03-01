@@ -152,13 +152,13 @@
         };
 
         Floater.prototype.recalc = function () {
-            var top,
+            var top = this.state.lastTop,
                 elHeight = this.$element.offsetHeight,
                 parentTop = Number.parseInt(this.$relativeParent.offsetTop) || Number.parseInt(this.$containerParent.offsetTop),
                 max = (this.$containerParent.offsetHeight - elHeight - parentTop),
                 elTop = this.state.lastTop - Number.parseInt(this.options.paddingTop),
                 elBottom = this.state.lastTop + elHeight + Number.parseInt(this.options.paddingBottom),
-                scrollY = window.scrollY,
+                scrollY = window.pageYOffset,
                 windowHeight = window.innerHeight,
                 scrollHeight = scrollY + windowHeight;
 
@@ -192,12 +192,15 @@
 
             this.state.top = top;
             this.state.lastTop = top;
-            this.requestTick(top);
+            this.requestTick();
         };
 
         Floater.prototype.requestTick = function() {
             if (!this.scroll.ticking) {
-                if (debug) console.log('FLOATER TOP', {top: this.state.top, lastTop: this.state.lastTop});
+                if (debug) {
+                    console.log('FLOATER TOP', {top: this.state.top, lastTop: this.state.lastTop});
+                    console.log('FLOATER SCROLL', {scroll: window.scrollY, lastScroll: this.scroll.last});
+                }
 
                 window.requestAnimationFrame(function () {
                     this.scrollTop(this.state.top);
