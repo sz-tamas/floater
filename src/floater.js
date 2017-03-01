@@ -36,6 +36,35 @@
         };
     }
 
+    // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+    // http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
+    // requestAnimationFrame polyfill by Erik Möller. fixes from Paul Irish and Tino Zijdel
+    // MIT license
+    (function() {
+        var lastTime = 0;
+        var vendors = ['ms', 'moz', 'webkit', 'o'];
+        for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+            window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+            window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame']
+                || window[vendors[x]+'CancelRequestAnimationFrame'];
+        }
+
+        if (!window.requestAnimationFrame)
+            window.requestAnimationFrame = function(callback, element) {
+                var currTime = new Date().getTime();
+                var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+                var id = window.setTimeout(function() { callback(currTime + timeToCall); },
+                    timeToCall);
+                lastTime = currTime + timeToCall;
+                return id;
+            };
+
+        if (!window.cancelAnimationFrame)
+            window.cancelAnimationFrame = function(id) {
+                clearTimeout(id);
+            };
+    }());
+
     var cssTransition = (function() {
         var fakeElement = document.createElement('div'),
             transitions = {
@@ -103,9 +132,12 @@
             this.$relativeParent.style.height = '100%';
             this.$element.style.position = 'absolute';
             this.$element.style.width = 'inherit';
+            this.$element.style.backfaceVisibility = 'hidden';
+            this.$element.style.perspective = 1000;
 
             if (this.options.transform && this.options.transition) {
-                this.$element.style.transition = this.options.animationDuration + 'ms transform cubic-bezier(0.1, 0.32, 0.1, 0)';
+                this.$element.style.transition = this.options.animationDuration + 'ms all cubic-bezier(0.1, 0.32, 0.1, 0) 0s';
+                this.$element.style.willChange = 'transform';
                 this.$element.addEventListener(this.options.transition, function() {
                     if (debug) console.log('FLOATER TICKING END');
                     this.scroll.ticking = false;
@@ -113,6 +145,7 @@
                 }.bind(this));
             } else {
                 this.$element.style.top = 'initial';
+                this.$element.style.willChange = 'top';
             }
 
             window.addEventListener('scroll', this.onScroll.bind(this));
@@ -162,37 +195,39 @@
                 windowHeight = window.innerHeight,
                 scrollHeight = scrollY + windowHeight;
 
-            // (Re)Set relative parent height
-            this.$relativeParent.style.height = elHeight + 'px';
-            this.$relativeParent.style.minHeight = elHeight + 'px';
+            window.requestAnimationFrame(function () {
+                // (Re)Set relative parent height
+                this.$relativeParent.style.height = elHeight + 'px';
+                this.$relativeParent.style.minHeight = elHeight + 'px';
 
-            // Skip setting top if in standby mode
-            if (this.options.standby) return;
+                // Skip setting top if in standby mode
+                if (this.options.standby) return;
 
-            // Stick to
-            if (elHeight > windowHeight) {
-                if (elTop + parentTop >= scrollY) {
-                    this.state.top -= Math.min(this.state.lastTop, (elTop + parentTop) - scrollY);
-                } else if (elBottom + parentTop <= scrollHeight) {
-                    this.state.top += (scrollHeight) - (elBottom + parentTop);
+                // Stick to
+                if (elHeight > windowHeight) {
+                    if (elTop + parentTop > scrollY) {
+                        this.state.top -= Math.min(this.state.lastTop, (elTop + parentTop) - scrollY);
+                    } else if (elBottom + parentTop < scrollHeight) {
+                        this.state.top += scrollHeight - (elBottom + parentTop);
+                    } else {
+                        if (debug) console.log('FLOATER TICKING END');
+                        this.scroll.ticking = false;
+                        return;
+                    }
+
+                    top = this.state.top;
                 } else {
-                    if (debug) console.log('FLOATER TICKING END');
+                    top = scrollY - parentTop + Number.parseInt(this.options.paddingTop);
                     this.scroll.ticking = false;
-                    return;
                 }
 
-                top = this.state.top;
-            } else {
-                top = scrollY - parentTop + Number.parseInt(this.options.paddingTop);
-                this.scroll.ticking = false;
-            }
+                top = Math.min(top, max);
+                top = Math.max(top, 0);
 
-            top = Math.min(top, max);
-            top = Math.max(top, 0);
-
-            this.state.top = top;
-            this.state.lastTop = top;
-            this.requestTick();
+                this.state.top = top;
+                this.state.lastTop = top;
+                this.requestTick();
+            }.bind(this));
         };
 
         Floater.prototype.requestTick = function() {
@@ -202,9 +237,7 @@
                     console.log('FLOATER SCROLL', {scroll: window.scrollY, lastScroll: this.scroll.last});
                 }
 
-                window.requestAnimationFrame(function () {
-                    this.scrollTop(this.state.top);
-                }.bind(this));
+                this.scrollTop(this.state.top);
             }
             this.scroll.ticking = true;
         };
