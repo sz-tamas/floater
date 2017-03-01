@@ -40,9 +40,9 @@
         var fakeElement = document.createElement('div'),
             transitions = {
                 "transition"      : "transitionend",
-                "OTransition"     : "oTransitionEnd",
-                "MozTransition"   : "transitionend",
-                "WebkitTransition": "webkitTransitionEnd"
+                "-o-Transition"     : "oTransitionEnd",
+                "-moz-transition"   : "transitionend",
+                "-webkit-transition": "webkitTransitionEnd"
             };
 
         for (t in transitions){
@@ -53,9 +53,9 @@
     })();
 
     var cssTransform = (function() {
-        var prefixes = 'transform webkitTransform mozTransform oTransform msTransform'.split(' '),
+        var prefixes = 'transform -webkit-transform -moz-transform -o-transform'.split(' '),
             fakeElement = document.createElement('div');
-        cssTransform;
+            cssTransform;
 
         prefixes.some(function(prefix) {
             cssTransform = fakeElement.style[prefix] != undefined ? prefix : undefined;
@@ -79,10 +79,10 @@
             this.options = Object.assign({
                 paddingTop: paddingTop,
                 paddingBottom: paddingBottom,
-                animationDuration: 250,
+                animationDuration: 150,
                 standby: false,
                 transform: cssTransform,
-                transition: cssTransition,
+                transition: cssTransition
             }, JSON.parse($element.dataset.floaterOptions || '{}'));
 
             this.init();
@@ -104,7 +104,7 @@
             this.$element.style.position = 'absolute';
             this.$element.style.width = 'inherit';
 
-            if (this.options.transform) {
+            if (this.options.transform && this.options.transition) {
                 this.$element.style.transition = this.options.animationDuration + 'ms transform cubic-bezier(0.1, 0.32, 0.1, 0)';
                 this.$element.addEventListener(this.options.transition, function() {
                     if (debug) console.log('FLOATER TICKING END');
@@ -141,7 +141,7 @@
                 this.$element.style.position = 'absolute';
                 this.$element.style.width = 'inherit';
 
-                if (this.options.transform) {
+                if (this.options.transform && this.options.transition) {
                     this.$element.style.transform = 'none';
                 } else {
                     this.$element.style.top = 'initial';
@@ -210,7 +210,7 @@
         };
 
         Floater.prototype.scrollTop = function(top) {
-            if (this.options.transform) {
+            if (this.options.transform && this.options.transition) {
                 this.$element.style[this.options.transform] = 'translate3d(0, ' + top + 'px, 0)';
             } else {
                 this.$element.style.top = top + 'px';
