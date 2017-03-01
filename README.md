@@ -1,6 +1,8 @@
-# floater v1.0
+# floater v2.0
 
-Super smooth &amp; easy jquery floater on scroll, based on sticky-kit.
+Super smooth &amp; easy javascript floater on scroll, based on sticky-kit.
+
+Supports 3d transitions if available with fallback to setting element's top position.
 
 ## Options
 
