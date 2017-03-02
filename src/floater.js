@@ -1,5 +1,5 @@
 /**
- @license Floater v1.0 | Tamas Szalczinger
+ @license Floater v2.0 | Tamas Szalczinger
  */
 !function(window, namespace) {
 
@@ -8,7 +8,7 @@
 
     var paddingTop = 8,
         paddingBottom = 8,
-        debug = true;
+        debug = false;
 
     // Polyfill
     if (typeof Object.assign != 'function') {
@@ -83,7 +83,7 @@
 
     var cssTransform = (function() {
         var prefixes = 'transform -webkit-transform -moz-transform -o-transform'.split(' '),
-            fakeElement = document.createElement('div');
+            fakeElement = document.createElement('div'),
             cssTransform;
 
         prefixes.some(function(prefix) {
@@ -101,14 +101,14 @@
             this.$containerParent = document.querySelector($element.dataset.floaterContainer);
             this.$relativeParent = document.querySelector($element.dataset.floaterParent) || $element.parentElement;
 
-            this.scroll = {last: window.pageYOffset - 1, timeout: null, ticking: false};
+            this.scroll = {last: window.pageYOffset - 1, timeout: null, ticking: 0};
 
-            this.state = {top: 0, lastTop: 0};
+            this.state = {top: 0, lastTop: 0, elHeight: 0, rpHeight: 0, cpHeight: 0, pTop: 0, wHeight: 0};
 
             this.options = Object.assign({
                 paddingTop: paddingTop,
                 paddingBottom: paddingBottom,
-                animationDuration: 150,
+                animationDuration: 250,
                 standby: false,
                 transform: cssTransform,
                 transition: cssTransition
@@ -136,35 +136,34 @@
             this.$element.style.perspective = 1000;
 
             if (this.options.transform && this.options.transition) {
-                this.$element.style.transition = this.options.animationDuration + 'ms all cubic-bezier(0.1, 0.32, 0.1, 0) 0s';
-                this.$element.style.willChange = 'transform';
-                this.$element.addEventListener(this.options.transition, function() {
-                    if (debug) console.log('FLOATER TICKING END');
-                    this.scroll.ticking = false;
-                    this.recalc();
-                }.bind(this));
+                this.$element.style.transition = (Number.parseInt(this.options.animationDuration) + 10) + 'ms all cubic-bezier(0.1, 0.32, 0.1, 0) 0s';
+                this.$element.style.willChange = 'transform, scroll-position';
             } else {
                 this.$element.style.top = 'initial';
                 this.$element.style.willChange = 'top';
             }
 
-            window.addEventListener('scroll', this.onScroll.bind(this));
-            window.addEventListener('resize', this.onScroll.bind(this));
+            window.addEventListener('scroll', this.onscroll.bind(this));
+            window.addEventListener('resize', this.onscroll.bind(this));
+            window.setInterval(this.cache.bind(this), 3000);
 
             document.addEventListener('floater:recalc', this.recalc.bind(this));
+            document.addEventListener('floater:cache', this.cache.bind(this));
             document.addEventListener('floater:standby-on', function() { this.options.standby = true; }.bind(this));
             document.addEventListener('floater:standby-off', function() { this.options.standby = false; }.bind(this));
 
             this.$element.addEventListener('floater:recalc', this.recalc.bind(this));
+            this.$element.addEventListener('floater:cache', this.cache.bind(this));
             this.$element.addEventListener('floater:standby-on', function() { this.options.standby = true; }.bind(this));
             this.$element.addEventListener('floater:standby-off', function() { this.options.standby = false; }.bind(this));
 
             if (debug) console.log('FLOATER ATTACHED', this.$element, this.options);
 
-            this.onScroll();
+            this.cache();
+            this.onscroll();
         };
 
-        Floater.prototype.onScroll = function() {
+        Floater.prototype.onscroll = function() {
             if (this.options.mediaUp && (+this.options.mediaUp < window.innerWidth) ||
                 this.options.mediaDown && (+this.options.mediaDown > window.innerWidth) ||
                 !(this.options.mediaUp || this.options.mediaDown)) {
@@ -180,72 +179,71 @@
                     this.$element.style.top = 'initial';
                 }
             }
+        };
 
-            this.scroll.last = window.pageYOffset;
+        Floater.prototype.cache = function() {
+            this.state.elHeight = this.$element.offsetHeight;
+            this.state.rpHeight = this.$relativeParent.offsetHeight;
+            this.state.cpHeight = this.$containerParent.offsetHeight;
+            this.state.pTop = Number.parseInt(this.$relativeParent.offsetTop) || Number.parseInt(this.$containerParent.offsetTop);
+            this.state.wHeight = window.innerHeight;
         };
 
         Floater.prototype.recalc = function () {
-            var top = this.state.lastTop,
-                elHeight = this.$element.offsetHeight,
-                parentTop = Number.parseInt(this.$relativeParent.offsetTop) || Number.parseInt(this.$containerParent.offsetTop),
-                max = (this.$containerParent.offsetHeight - elHeight - parentTop),
-                elTop = this.state.lastTop - Number.parseInt(this.options.paddingTop),
-                elBottom = this.state.lastTop + elHeight + Number.parseInt(this.options.paddingBottom),
-                scrollY = window.pageYOffset,
-                windowHeight = window.innerHeight,
-                scrollHeight = scrollY + windowHeight;
+            if (this.scroll.ticking > 0) return;
 
-            window.requestAnimationFrame(function () {
+            this.scroll.ticking = window.requestAnimationFrame(function () {
+                var top = this.state.lastTop,
+                    max = this.state.cpHeight - this.state.elHeight - this.state.pTop,
+                    elTop = this.state.lastTop - Number.parseInt(this.options.paddingTop),
+                    elBottom = this.state.lastTop + this.state.elHeight + Number.parseInt(this.options.paddingBottom),
+                    scrollY = window.pageYOffset,
+                    scrollHeight = scrollY + this.state.wHeight;
+
                 // (Re)Set relative parent height
-                this.$relativeParent.style.height = elHeight + 'px';
-                this.$relativeParent.style.minHeight = elHeight + 'px';
+                this.$relativeParent.style.height = this.state.elHeight + 'px';
+                this.$relativeParent.style.minHeight = this.state.elHeight + 'px';
 
                 // Skip setting top if in standby mode
                 if (this.options.standby) return;
 
                 // Stick to
-                if (elHeight > windowHeight) {
-                    if (elTop + parentTop > scrollY) {
-                        top -= Math.min(this.state.lastTop, (elTop + parentTop) - scrollY);
-                    } else if (elBottom + parentTop < scrollHeight) {
-                        top += scrollHeight - (elBottom + parentTop);
+                if (this.state.elHeight > this.state.wHeight) {
+                    if (elTop + this.state.pTop > scrollY) {
+                        top -= Math.min(this.state.lastTop, (elTop + this.state.pTop) - scrollY);
+                    } else if (elBottom + this.state.pTop < scrollHeight) {
+                        top += scrollHeight - (elBottom + this.state.pTop);
                     } else {
                         if (debug) console.log('FLOATER TICKING END');
-                        this.scroll.ticking = false;
+                        this.scroll.ticking = 0;
                         return;
                     }
                 } else {
-                    top = scrollY - parentTop + Number.parseInt(this.options.paddingTop);
-                    this.scroll.ticking = false;
+                    top = scrollY - this.state.pTop + Number.parseInt(this.options.paddingTop);
+                    this.scroll.ticking = 0;
                 }
 
                 top = Math.min(top, max);
                 top = Math.max(top, 0);
-                this.requestTick(top);
+                this.scrollTop(top);
+                this.scroll.last = scrollY;
+                // this.scroll.ticking = true;
             }.bind(this));
         };
 
-        Floater.prototype.requestTick = function(top) {
-            if (!this.scroll.ticking) {
-                if (debug) {
-                    console.log('FLOATER TOP', {top: top, lastTop: this.state.lastTop});
-                    console.log('FLOATER SCROLL', {scroll: window.scrollY, lastScroll: this.scroll.last});
-                }
-
-                this.scrollTop(top);
-                setTimeout(function() {
-                    this.scroll.ticking = false;
-                }.bind(this), +this.options.animationEnd || 0);
-            }
-            this.scroll.ticking = true;
-        };
-
         Floater.prototype.scrollTop = function(top) {
+            if (debug) console.log('FLOATER TOP', {top: top, lastTop: this.state.lastTop});
+
             if (this.options.transform && this.options.transition) {
                 this.$element.style[this.options.transform] = 'translate3d(0, ' + top + 'px, 0)';
+                if (Number.parseInt(this.options.animationDuration) > 100) {
+                    setTimeout(function() {
+                        this.scroll.ticking = 0;
+                    }.bind(this), Number.parseInt(this.options.animationEnd) + 10);
+                }
             } else {
                 this.$element.style.top = top + 'px';
-                this.scroll.ticking = false;
+                this.scroll.ticking = 0;
             }
             this.state.lastTop = this.state.top;
             this.state.top = top;
