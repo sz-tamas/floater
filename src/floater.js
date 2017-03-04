@@ -118,10 +118,10 @@
         }
 
         Floater.attach = function(target) {
-            var self = this;
+            var self = this, elements = document.querySelectorAll(target);
 
-            document.querySelectorAll(target).forEach(function(element) {
-                new self(element);
+            Object.keys(elements).forEach(function(key) {
+                new self(elements[key]);
             });
         };
 
@@ -136,7 +136,7 @@
             this.$element.style.perspective = 1000;
 
             if (this.options.transform && this.options.transition) {
-                this.$element.style.transition = (Number.parseInt(this.options.animationDuration) + 10) + 'ms all cubic-bezier(0.1, 0.32, 0.1, 0) 0s';
+                this.$element.style.transition = (Number.parseInt(this.options.animationDuration) + 10) + 'ms all cubic-bezier(0.5, 0.5, 0.5, 0) 0s';
                 this.$element.style.willChange = 'transform, scroll-position';
             } else {
                 this.$element.style.top = 'initial';
