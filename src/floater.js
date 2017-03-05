@@ -65,22 +65,6 @@
             };
     }());
 
-    var cssTransition = (function() {
-        var fakeElement = document.createElement('div'),
-            transitions = {
-                "transition"      : "transitionend",
-                "-o-Transition"     : "oTransitionEnd",
-                "-moz-transition"   : "transitionend",
-                "-webkit-transition": "webkitTransitionEnd"
-            };
-
-        for (t in transitions){
-            if (fakeElement.style[t] !== undefined){
-                return transitions[t];
-            }
-        }
-    })();
-
     var cssTransform = (function() {
         var prefixes = 'transform -webkit-transform -moz-transform -o-transform'.split(' '),
             fakeElement = document.createElement('div'),
@@ -103,15 +87,14 @@
 
             this.scroll = {last: window.pageYOffset - 1, timeout: null, ticking: 0};
 
-            this.state = {top: 0, lastTop: 0, elHeight: 0, rpHeight: 0, cpHeight: 0, pTop: 0, wHeight: 0};
+            this.state = {top: 0, elHeight: 0, rpHeight: 0, cpHeight: 0, pTop: 0, wHeight: 0};
 
             this.options = Object.assign({
                 paddingTop: paddingTop,
                 paddingBottom: paddingBottom,
                 animationDuration: 250,
                 standby: false,
-                transform: cssTransform,
-                transition: cssTransition
+                transform: cssTransform
             }, JSON.parse($element.dataset.floaterOptions || '{}'));
 
             this.init();
@@ -132,12 +115,11 @@
             this.$relativeParent.style.height = '100%';
             this.$element.style.position = 'absolute';
             this.$element.style.width = 'inherit';
-            this.$element.style.backfaceVisibility = 'hidden';
             this.$element.style.perspective = 1000;
 
-            if (this.options.transform && this.options.transition) {
-                this.$element.style.transition = (Number.parseInt(this.options.animationDuration) + 10) + 'ms all cubic-bezier(0.5, 0.5, 0.5, 0) 0s';
-                this.$element.style.willChange = 'transform, scroll-position';
+            if (this.options.transform) {
+                this.$element.style.transition = parseInt(this.options.animationDuration) + 'ms transform linear 0s';
+                this.$element.style.willChange = 'transform, scroll-position, transition';
             } else {
                 this.$element.style.top = 'initial';
                 this.$element.style.willChange = 'top';
@@ -145,7 +127,8 @@
 
             window.addEventListener('scroll', this.onscroll.bind(this));
             window.addEventListener('resize', this.onscroll.bind(this));
-            window.setInterval(this.cache.bind(this), 3000);
+			window.addEventListener('touchmove', this.onscroll.bind(this));
+            window.setInterval(this.cache.bind(this), 1500);
 
             document.addEventListener('floater:recalc', this.recalc.bind(this));
             document.addEventListener('floater:cache', this.cache.bind(this));
@@ -163,18 +146,21 @@
             this.onscroll();
         };
 
-        Floater.prototype.onscroll = function() {
-            if (this.options.mediaUp && (+this.options.mediaUp < window.innerWidth) ||
+        Floater.prototype.isMediaEnabled = function() {
+            return this.options.mediaUp && (+this.options.mediaUp < window.innerWidth) ||
                 this.options.mediaDown && (+this.options.mediaDown > window.innerWidth) ||
-                !(this.options.mediaUp || this.options.mediaDown)) {
+                !(this.options.mediaUp || this.options.mediaDown);
+        };
+
+        Floater.prototype.onscroll = function() {
+            if (this.isMediaEnabled()) {
                 this.recalc();
             } else {
-                // Unset
-                this.$element.style.position = 'absolute';
+                this.$element.style.position = 'relative';
                 this.$element.style.width = 'inherit';
 
-                if (this.options.transform && this.options.transition) {
-                    this.$element.style.transform = 'none';
+                if (this.options.transform) {
+                    this.$element.style[this.options.transform] = 'none';
                 } else {
                     this.$element.style.top = 'initial';
                 }
@@ -185,18 +171,18 @@
             this.state.elHeight = this.$element.offsetHeight;
             this.state.rpHeight = this.$relativeParent.offsetHeight;
             this.state.cpHeight = this.$containerParent.offsetHeight;
-            this.state.pTop = Number.parseInt(this.$relativeParent.offsetTop) || Number.parseInt(this.$containerParent.offsetTop);
+            this.state.pTop = parseInt(this.$relativeParent.offsetTop) || parseInt(this.$containerParent.offsetTop);
             this.state.wHeight = window.innerHeight;
         };
 
         Floater.prototype.recalc = function () {
-            if (this.scroll.ticking > 0) return;
+			if (this.scroll.ticking > 0) return false;
 
             this.scroll.ticking = window.requestAnimationFrame(function () {
-                var top = this.state.lastTop,
+                var top = this.state.top,
                     max = this.state.cpHeight - this.state.elHeight - this.state.pTop,
-                    elTop = this.state.lastTop - Number.parseInt(this.options.paddingTop),
-                    elBottom = this.state.lastTop + this.state.elHeight + Number.parseInt(this.options.paddingBottom),
+                    elTop = top - parseInt(this.options.paddingTop),
+                    elBottom = top + this.state.elHeight + parseInt(this.options.paddingBottom),
                     scrollY = window.pageYOffset,
                     scrollHeight = scrollY + this.state.wHeight;
 
@@ -210,7 +196,7 @@
                 // Stick to
                 if (this.state.elHeight > this.state.wHeight) {
                     if (elTop + this.state.pTop > scrollY) {
-                        top -= Math.min(this.state.lastTop, (elTop + this.state.pTop) - scrollY);
+                        top -= Math.min(this.state.top, (elTop + this.state.pTop) - scrollY);
                     } else if (elBottom + this.state.pTop < scrollHeight) {
                         top += scrollHeight - (elBottom + this.state.pTop);
                     } else {
@@ -219,34 +205,30 @@
                         return;
                     }
                 } else {
-                    top = scrollY - this.state.pTop + Number.parseInt(this.options.paddingTop);
-                    this.scroll.ticking = 0;
+                    top = scrollY - this.state.pTop + parseInt(this.options.paddingTop);
                 }
 
                 top = Math.min(top, max);
                 top = Math.max(top, 0);
                 this.scrollTop(top);
                 this.scroll.last = scrollY;
-                // this.scroll.ticking = true;
             }.bind(this));
         };
 
         Floater.prototype.scrollTop = function(top) {
-            if (debug) console.log('FLOATER TOP', {top: top, lastTop: this.state.lastTop});
+            if (debug) console.log('FLOATER TOP', top, this.state.top);
 
-            if (this.options.transform && this.options.transition) {
+            if (this.options.transform) {
                 this.$element.style[this.options.transform] = 'translate3d(0, ' + top + 'px, 0)';
-                if (Number.parseInt(this.options.animationDuration) > 100) {
-                    setTimeout(function() {
-                        this.scroll.ticking = 0;
-                    }.bind(this), Number.parseInt(this.options.animationEnd) + 10);
-                }
+                setTimeout(function() {
+                    this.state.top = top;
+                    this.scroll.ticking = 0;
+                }.bind(this), parseInt(this.options.animationDuration));
             } else {
                 this.$element.style.top = top + 'px';
+                this.state.top = top;
                 this.scroll.ticking = 0;
             }
-            this.state.lastTop = this.state.top;
-            this.state.top = top;
         };
 
         return Floater;
