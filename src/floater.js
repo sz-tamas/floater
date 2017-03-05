@@ -6,9 +6,9 @@
     var ns = window[namespace] || {};
     window[namespace] = ns;
 
-    var paddingTop = 8,
-        paddingBottom = 8,
-        debug = false;
+    var paddingTop = 0,
+        paddingBottom = 0,
+        debug = true;
 
     // Polyfill
     if (typeof Object.assign != 'function') {
@@ -85,7 +85,7 @@
             this.$containerParent = document.querySelector($element.dataset.floaterContainer);
             this.$relativeParent = document.querySelector($element.dataset.floaterParent) || $element.parentElement;
 
-            this.scroll = {last: window.pageYOffset - 1, timeout: null, ticking: 0};
+            this.scroll = {last: window.pageYOffset - 1, ticking: 0, skipped: false};
 
             this.state = {top: 0, elHeight: 0, rpHeight: 0, cpHeight: 0, pTop: 0, wHeight: 0};
 
@@ -140,8 +140,7 @@
             this.$element.addEventListener('floater:standby-on', function() { this.options.standby = true; }.bind(this));
             this.$element.addEventListener('floater:standby-off', function() { this.options.standby = false; }.bind(this));
 
-            if (debug) console.log('FLOATER ATTACHED', this.$element, this.options);
-
+            this.debug('FLOATER ATTACHED', this.$element, this.options);
             this.cache();
             this.onscroll();
         };
@@ -176,7 +175,10 @@
         };
 
         Floater.prototype.recalc = function () {
-			if (this.scroll.ticking > 0) return false;
+			if (this.scroll.ticking > 0) {
+			    this.scroll.skipped = true;
+			    return false;
+            }
 
             this.scroll.ticking = window.requestAnimationFrame(function () {
                 var top = this.state.top,
@@ -200,7 +202,7 @@
                     } else if (elBottom + this.state.pTop < scrollHeight) {
                         top += scrollHeight - (elBottom + this.state.pTop);
                     } else {
-                        if (debug) console.log('FLOATER TICKING END');
+                        this.debug('FLOATER TICKING END');
                         this.scroll.ticking = 0;
                         return;
                     }
@@ -216,18 +218,30 @@
         };
 
         Floater.prototype.scrollTop = function(top) {
-            if (debug) console.log('FLOATER TOP', top, this.state.top);
+            this.debug('FLOATER TOP', top, this.state.top);
 
             if (this.options.transform) {
                 this.$element.style[this.options.transform] = 'translate3d(0, ' + top + 'px, 0)';
                 setTimeout(function() {
                     this.state.top = top;
                     this.scroll.ticking = 0;
+
+                    if (this.scroll.skipped) {
+                        this.debug('FLOATER RUN SKIPPED');
+                        this.scroll.skipped = false;
+                        this.recalc();
+                    }
                 }.bind(this), parseInt(this.options.animationDuration));
             } else {
                 this.$element.style.top = top + 'px';
                 this.state.top = top;
                 this.scroll.ticking = 0;
+            }
+        };
+
+        Floater.prototype.debug = function() {
+            if (debug && console && console['debug']) {
+                console.debug(arguments);
             }
         };
 
