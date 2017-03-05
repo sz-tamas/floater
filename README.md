@@ -1,6 +1,6 @@
 # floater v2.0
 
-Super smooth &amp; easy javascript floater on scroll, based on sticky-kit.
+Super smooth & easy javascript floater on scroll, based on sticky-kit.
 
 Supports 3d transitions if available with fallback to setting element's top position.
 
@@ -25,6 +25,8 @@ This is the relative parent to the element where we want the element to stick to
 **data-floater-options**: JSON
  
    - animate: true,false           # Sets element top animated or not
+   - animationDuration: 150        # Sets the duration of the animation
+   - transform:                    # If it is an empty string, top calc will be forced, otherwise it is set by floater
    - paddingTop: 0                 # Adds a padding to the element offsettop calc when setting top
    - paddingBottom: 0              # Adds a padding to the element offsetbottom calc when setting top
    - mediaUp: 768                  # Skips calc & top change under 768px
@@ -44,6 +46,10 @@ When sending targeted event only the target will skip recalc and changing top.
 **floater:standby-off**
 When sending global (document) event all floaters will start recalc and changing top on next scroll or *floater:recalc*.
 When sending targeted event only the target will start recalc and changing top on next scroll or *floater:recalc*.
+
+**floater:cache** (global/target)
+When sending global (document) event all floaters will cache elements position & height.
+When sending targeted event only the target floater will cache elements position & height.
 
 ## Usage example
 
