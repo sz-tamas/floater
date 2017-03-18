@@ -182,7 +182,7 @@
 
             this.scroll.ticking = window.requestAnimationFrame(function () {
                 var top = this.state.top,
-                    max = this.state.cpHeight - this.state.elHeight - this.state.pTop,
+                    max = this.state.cpHeight - this.state.elHeight - this.options.paddingTop,
                     elTop = top - parseInt(this.options.paddingTop),
                     elBottom = top + this.state.elHeight + parseInt(this.options.paddingBottom),
                     scrollY = window.pageYOffset,
@@ -248,5 +248,7 @@
         return Floater;
     })();
 
-    ns.Floater.attach('[data-component="floater"]');
+    window.onload = function() {
+        ns.Floater.attach('[data-component="floater"]');
+    };
 }(window, 'floater');
